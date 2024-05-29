@@ -10,9 +10,7 @@ app.set('view engine', 'ejs');
 app.set('views', 'GESTION');
 
 const route = express.Router();
-
-
-
+const route2 = express.Router();
 
 // Base de données
 const connexion = mysql.createConnection({
@@ -21,6 +19,7 @@ const connexion = mysql.createConnection({
   password: '',
   database: 'pigier'
 });
+
 
 // Creation de la session
 app.use(sessions({
@@ -55,35 +54,7 @@ class Element {
   static index(req, res) {
     res.status(200).render('login');
   }
-
-  // Lorsqu'on soumet la page login
-  static login(req, res) {
-    const { username, password } = req.body;
-    if (username && password) {
-      // Si l'utilisateur est un étudiant 
-      connexion.query('SELECT * FROM Etudiant WHERE username = ? AND password = ?', [username, password], (error, result) => {
-        if (error) console.log('Erreur de connexion');
-        if (result.length > 0) {
-          req.sessions.loggedIn = true;
-          req.sessions.username = username;
-          // page de redirection pour unne bonne connexiion
-          res.status(200).redirect('/');
-        } else {
-          // Si l'utilisateur est un admin
-          connexion.query('SELECT * FROM admin WHERE username = ? AND password = ?', [username, password], (error, result) => {
-            if (error) console.log('Erreur sur la connexion du professeur');
-            if (result.length > 0) {
-              // Page de redirection pour une bonne connexion
-              res.status(200).render('/'); 
-            } else {
-              // Sinon tu le redirige s'il nest ni etudiant et ni admin
-              res.redirect('/login');
-            }
-          });
-        }
-      });
-    }
-  }
+  
   // Recuperation de la liste de tout les etudiants
   static aff(req, res) {
     connexion.query('SELECT * FROM pigier.etudiant', (error, result) => {
@@ -91,38 +62,63 @@ class Element {
       res.json({ etudiant: result });
     });
   }
-  // Soumission de l'ajout des etudiant
-  static post(req, res) {
-    res.status(200).render('ajout');
-  }
+
       //  Ajout d'etudiant
-  static add(req, res) {
-    const { nom, prenoms, age } = req.body;
-    connexion.query('INSERT INTO etudiant(nom, prenoms, age) VALUES (?,?,?)', [nom, prenoms, age], (error) => {
-      if (error) console.log('Erreur sur la requête d\'insertion');
-      res.redirect('/index');
-    });
-  }
-    //  Modification de l'etudiant
-  static edit(req, res) {
-    connexion.query(`SELECT * FROM etudiant WHERE id = ?`, [req.params.id], (error, result) => {
-      if (error) console.log('Erreur de requête');
-      res.status(200).render('edit', { donnees: result });
-    });
-  }
+      static add(req, res) {
+     
+        let nom = 'ange';
+        let prenoms = 'ama';
+        let age = '2022-10-25';
+        let usernames = 'ett';
+        let password = '123456';
+    
+        // Parameterized query to prevent SQL injection
+        const query = 'INSERT INTO etudiant (nom, prenoms, datenaiss, userame, password) VALUES (?, ?, ?, ?, ?)';
+        const values = [nom, prenoms, age, usernames, password];
+    
+        connexion.query(query, values, (error) => {
+            if (error) {
+                console.error('Erreur sur la requête d\'insertion:', error);
+                res.status(500).json({ error: 'Erreur lors de l\'ajout de l\'étudiant' });
+            } else {
+                res.json({ result: 'Étudiant ajouté' });
+            }
+        });
+    }
+ 
       // Update de 
-  static update(req, res) {
-    const { nom, prenoms, age } = req.body;
-    connexion.query('UPDATE etudiant SET nom = ?, prenoms = ?, age = ? WHERE id = ?', [nom, prenoms, age, req.params.id], (error) => {
-      if (error) console.log('Erreur de requête');
-      res.status(200).redirect('/index');
-    });
-  }
+      static update(req, res) {
+
+        // const { nom, prenoms, age, usernames, passwords } = req.body;
+  
+        let nom = 'dermin';
+        let prenoms = 'gouli';
+        let age = '2024-12-25'; 
+        let usernames = 'user2024';
+        let passwords = '20242024';
+    
+        // Parameterized query to prevent SQL injection
+        const query = 'UPDATE etudiant SET nom = ?, prenoms = ?, datenaiss = ?, userame = ?, password = ? WHERE idetudiant = ?';
+        const values = [nom, prenoms, age, usernames, passwords, 2]; 
+        connexion.query(query, values, (error, results) => {
+            if (error) {
+                console.error('Erreur de requête de mise à jour des données:', error);
+            } else {
+                res.json({ result: 'Étudiant modifié' });
+            }
+        });
+    }
 // Suppression
   static delete(req, res) {
-    connexion.query('DELETE FROM etudiant WHERE id = ?', [req.params.id], (error) => {
-      if (error) console.log('Erreur de requête');
-      res.status(200).redirect('/index');
+    const query = 'DELETE FROM etudiant WHERE idetudiant = ?'
+    const value = [2]
+    connexion.query(query, value, (error) => {
+      if (error) {
+        console.log('Erreur de requête de supression0', error)
+      }else{
+        res.json({ result: 'Étudiant suprimé' });
+      }
+      // res.status(200).redirect('/index');
     });
   }
 
@@ -130,16 +126,104 @@ class Element {
     req.sessions.destroy((error) => {
       if (error) console.log(error);
     });
-    res.redirect('/index');
+    // res.redirect('/index');
+  }
+}
+class Element2 {
+  // Creation de la session
+  static sesion(req, res) {
+    if (req.sessions.username) {
+      res.render('dashbord', { username: req.sessions.username });
+    } else {
+      res.render('');
+    }
+  }
+  // Lancement de la page de login
+  static index(req, res) {
+    res.status(200).render('login');
+  }
+  
+  // Recuperation de la liste de tout les etudiants
+  static aff(req, res) {
+    connexion.query('SELECT * FROM pigier.professeur', (error, result) => {
+      if (error) console.log('Erreur sur la requête de recuperation', error);
+      res.json({ etudiant: result });
+    });
+  }
+
+      //  Ajout d'etudiant
+      static add(req, res) {
+     
+        let nom = 'ange';
+        let prenoms = 'ama';
+        let enseignement = 'comptablite';
+      
+    
+        // Parameterized query to prevent SQL injection
+        const query = 'INSERT INTO professeur (nom, prenoms, enseignement) VALUES (?, ?, ?)';
+        const values = [nom, prenoms, enseignement];
+    
+        connexion.query(query, values, (error) => {
+            if (error) {
+                console.error('Erreur sur la requête d\'insertion:', error);
+                res.status(500).json({ error: 'Erreur lors de l\'ajout de l\'encadreur' });
+            } else {
+                res.json({ result: 'Encadreur ajouté' });
+            }
+        });
+    }
+ 
+      // Update de 
+      static update(req, res) {
+
+        // const { nom, prenoms, age, usernames, passwords } = req.body;
+  
+        let nom = 'kple';
+        let prenoms = 'ive';
+        let enseignement = 'economie'; 
+    
+        const query = 'UPDATE professeur SET nom = ?, prenoms = ?, enseignement = ? WHERE idprofesseur = ?';
+        const values = [nom, prenoms, enseignement, 1]; 
+        connexion.query(query, values, (error, results) => {
+            if (error) {
+                console.error('Erreur de requête de mise à jour des données:', error);
+            } else {
+                res.json({ result: 'Encadreur modifié' });
+            }
+        });
+    }
+// Suppression
+  static delete(req, res) {
+    const query = 'DELETE FROM professeur WHERE idprofesseur = ?'
+    const value = [1]
+    connexion.query(query, value, (error) => {
+      if (error) {
+        console.log('Erreur de requête de supression0', error)
+      }else{
+        res.json({ result: 'Encadreur suprimé' });
+      }
+      // res.status(200).redirect('/index');
+    });
+  }
+
+  static destroy(req, res) {
+    req.sessions.destroy((error) => {
+      if (error) console.log(error);
+    });
+    // res.redirect('/index');
   }
 }
 
-// Les routes
-route.get('/etudiant', Element.aff);
-route.get('/ajout', Element.post);
-route.post('/ajout', Element.add);
-route.get('/edit/:id', Element.edit);
-route.post('/edit/:id', Element.update);
-route.get('/:id', Element.delete);
+// Les routes pour etudiants
+route.get('/liste', Element.aff);
+route.get('/ajout', Element.add);
+route.get('/edit', Element.update);
+route.get('/delete', Element.delete);
 
-module.exports = route;
+
+// Les routes pour encadreur
+route2.get('/liste', Element2.aff);
+route2.get('/ajout', Element2.add);
+route2.get('/edit', Element2.update);
+route2.get('/delete', Element2.delete);
+module.exports = {route, route2};
