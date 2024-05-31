@@ -42,21 +42,21 @@ const connexion = mysql.createConnection({
 
 app.get('/login',(req, res)=>{
         // const { username, password } = req.body;
-       let  username = 'koli'
-       let  password = '123456'
+       // let  username = 'koli'
+       // let  password = '123456'
           // Si l'utilisateur est un étudiant 
           connexion.query(`SELECT * FROM pigier.etudiant WHERE userame = '${username}' AND password = '${password}'`, (error, result) => {
             if (error) console.log('Erreur de connexion à etudiant //');
             if (result.length > 0) {  
               // page de redirection pour unne bonne connexiion
-              res.json({etudiant: 'connexion effectuer'});
+              // res.json({etudiant: 'connexion effectuer'});
             }else{
               // Si l'utilisateur est un admin
               connexion.query(`SELECT * FROM admin WHERE username = '${username}' AND password = '${password}'`, (error, result) => {
                 if (error) console.log('Erreur sur la connexion du professeur');
                 if (result.length) {
                   // Page de redirection pour une bonne connexion                
-                  res.json({etudiant:result});                    
+                  // res.json({etudiant:result});                    
                 } else {
                   // Sinon tu le redirige s'il nest ni etudiant et ni admin
                   res.json({etudiant:'erreur de connexion au deux personnes'})
