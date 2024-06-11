@@ -1,10 +1,13 @@
 const express = require('express');
+const cors = require('cors');
 const mysql = require('mysql2');
 const sessions = require('express-session');
 const bodyParser = require('body-parser');
 const path = require('path');
 const app = express();
 const { error, log } = require('console');
+
+app.use(cors());
 
 app.set('view engine', 'ejs');
 app.set('views', 'GESTION');
@@ -57,23 +60,27 @@ class Element {
   
   // Recuperation de la liste de tout les etudiants
   static aff(req, res) {
-    connexion.query('SELECT * FROM pigier.etudiant', (error, result) => {
-      if (error) console.log('Erreur sur la requête de recuperation');
-      res.json({ etudiant: result });
+    connexion.query('SELECT * FROM etudiant', (error, result) => {
+      if (error) {
+        console.log('Erreur sur la requête de recuperation');
+        res.status(500).json({ error: 'Erreur sur la requête de recuperation' });
+      } else {
+        res.json({ etudiant: result });
+      }
     });
   }
 
       //  Ajout d'etudiant
       static add(req, res) {
      
-        let nom = 'ange';
-        let prenoms = 'ama';
+        let nom = 'Momo';
+        let prenoms = 'Kablan';
         let age = '2022-10-25';
-        let usernames = 'ett';
-        let password = '123456';
+        let usernames = 'mmm';
+        let password = '33333';
     
         // Parameterized query to prevent SQL injection
-        const query = 'INSERT INTO etudiant (nom, prenoms, datenaiss, userame, password) VALUES (?, ?, ?, ?, ?)';
+        const query = 'INSERT INTO etudiant (nom, prenoms, datenaiss, username, password) VALUES (?, ?, ?, ?, ?)';
         const values = [nom, prenoms, age, usernames, password];
     
         connexion.query(query, values, (error) => {
@@ -98,7 +105,7 @@ class Element {
         let passwords = '20242024';
     
         // Parameterized query to prevent SQL injection
-        const query = 'UPDATE etudiant SET nom = ?, prenoms = ?, datenaiss = ?, userame = ?, password = ? WHERE idetudiant = ?';
+        const query = 'UPDATE etudiant SET nom = ?, prenoms = ?, datenaiss = ?, username = ?, password = ? WHERE idetudiant = ?';
         const values = [nom, prenoms, age, usernames, passwords, 2]; 
         connexion.query(query, values, (error, results) => {
             if (error) {
@@ -147,7 +154,7 @@ class Element2 {
   static aff(req, res) {
     connexion.query('SELECT * FROM pigier.professeur', (error, result) => {
       if (error) console.log('Erreur sur la requête de recuperation', error);
-      res.json({ etudiant: result });
+      res.json({ encadreur: result });
     });
   }
 
@@ -195,7 +202,7 @@ class Element2 {
 // Suppression
   static delete(req, res) {
     const query = 'DELETE FROM professeur WHERE idprofesseur = ?'
-    const value = [1]
+    const value = [2]
     connexion.query(query, value, (error) => {
       if (error) {
         console.log('Erreur de requête de supression0', error)
@@ -219,6 +226,7 @@ route.get('/liste', Element.aff);
 route.get('/ajout', Element.add);
 route.get('/edit', Element.update);
 route.get('/delete', Element.delete);
+
 
 
 // Les routes pour encadreur
