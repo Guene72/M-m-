@@ -57,70 +57,42 @@ app.get('/login',(req, res)=>{
         
 
 })
+
+// la liste de toutes les demandes
+app.get('/demandes-listes',(req, res)=>{
+  connexion.query('SELECT nom, prenoms, themesoutenance, nomfiliere FROM etudiant JOIN filiere ON etudiant.idfiliere = filiere.idfiliere',(error, results)=>{
+    if(error) console.log(error);
+    else res.json({resultats: results})
+  }
+  )
+})
+ // Effectuer une demandes 
 app.get('/demandes',(req, res)=>{
-  // Effectuer une demandes 
 
   let nom = 'Gaoussou'
   let prenoms = 'fiero'
   let datenaiss = '2022-10-25'
   let username = 'Nfk'
   let password = '123456'
-  let filiere = 'assistante de direction'
+  let filieres = ['RGL','comptabilite','commerciale','ressource humaine', 'assistante de direction']
+  let filiere = 'commerciale'
   let themeSoutenance = 'Gestion d\'un magasin'
 
-      if(filiere === 'RGL'){
+  for (let i = 0; i < filieres.length; i++) {
+    if (filieres.includes(filiere)) {
         const query1 = 'INSERT INTO etudiant (nom, prenoms, datenaiss, userame, password, themesoutenance, idfiliere ) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        const value1 = [nom, prenoms, datenaiss, username, password, themeSoutenance, 1] 
+        const value1 = [nom, prenoms, datenaiss, username, password, themeSoutenance, (filieres.indexOf(filiere)+1)] 
         connexion.query(query1, value1, (error, result)=>{
           if (error) {
             console.log('Erreur d\'ajout de la demande', error);  
           }else
           res.json({resultat: result})
         })
-      }else if(filiere ==='comptabilite'){
-        const query1 = 'INSERT INTO etudiant (nom, prenoms, datenaiss, userame, password, themesoutenance, idfiliere ) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        const value1 = [nom, prenoms, datenaiss, username, password, themeSoutenance, 2] 
-        connexion.query(query1, value1, (error, result)=>{
-          if (error) {
-            console.log('Erreur d\'ajout de la demande', error);  
-          }else
-          res.json({resultat: result})
-        })
+        
+    }
+    
+  }
 
-      }else if(filiere ==='commerciale'){
-        const query1 = 'INSERT INTO etudiant (nom, prenoms, datenaiss, userame, password, themesoutenance, idfiliere ) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        const value1 = [nom, prenoms, datenaiss, username, password, themeSoutenance, 3] 
-        connexion.query(query1, value1, (error, result)=>{
-          if (error) {
-            console.log('Erreur d\'ajout de la demande', error);  
-          }else
-          res.json({resultat: result})
-        })
-       }else if(filiere ==='ressource humaine'){
-        const query1 = 'INSERT INTO etudiant (nom, prenoms, datenaiss, userame, password, themesoutenance, idfiliere ) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        const value1 = [nom, prenoms, datenaiss, username, password, themeSoutenance, 4] 
-        connexion.query(query1, value1, (error, result)=>{
-          if (error) {
-            console.log('Erreur d\'ajout de la demande', error);  
-          }else
-          res.json({resultat: result})
-        })
-       }else if(filiere ==='assistante de direction'){
-        const query1 = 'INSERT INTO etudiant (nom, prenoms, datenaiss, userame, password, themesoutenance, idfiliere ) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        const value1 = [nom, prenoms, datenaiss, username, password, themeSoutenance, 5] 
-        connexion.query(query1, value1, (error, result)=>{
-          if (error) {
-            console.log('Erreur d\'ajout de la demande', error);  
-          }else{
-            connexion.query('SELECT nom, prenoms, themesoutenance, nomfiliere FROM etudiant JOIN filiere ON etudiant.idfiliere = filiere.idfiliere',(error, results)=>{
-              if(error) console.log(error);
-              else res.json({resultats: results})
-            }
-            )
-          }
-          
-        })
-       }
 })
 
 app.use('/etudiant', route);
