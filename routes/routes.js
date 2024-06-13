@@ -60,7 +60,7 @@ class Element {
   
   // Recuperation de la liste de tout les etudiants
   static aff(req, res) {
-    connexion.query('SELECT * FROM etudiant', (error, result) => {
+    connexion.query('SELECT * FROM etudiant JOIN filiere ON etudiant.idfiliere = filiere.idfiliere', (error, result) => {
       if (error) {
         console.log('Erreur sur la requête de recuperation');
         res.status(500).json({ error: 'Erreur sur la requête de recuperation' });
