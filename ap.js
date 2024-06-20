@@ -1,14 +1,18 @@
 const { route, route2 } = require('./routes/routes.js');
+const nodemailer = require('nodemailer')
 const express = require('express');
 const mysql = require('mysql2');
 const sessions = require('express-session');
 const bodyParser = require('body-parser');
 const path = require('path');
 const app = express();
+const fs = require('fs');
 const { error, log } = require('console');
 
 app.set('view engine', 'ejs');
 app.set('views', 'GESTION');
+
+
 
 // Base de données
 const connexion = mysql.createConnection({
@@ -26,6 +30,9 @@ connexion.connect((err) => {
         console.log('Connexion à la base de données effectuée');
     }
 });
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/login', (req, res) => {
     // const { username, password } = req.body;
@@ -46,7 +53,7 @@ app.get('/login', (req, res) => {
             connexion.query(`SELECT * FROM admin WHERE username = ? AND password = ?`, [username, password], (error, result) => {
                 if (error) {
                     console.log('Erreur sur la connexion de l\'admin', error);
-                    return res.status(500).json({ error: 'Database query error' });
+
                 }
                 if (result.length > 0) {
                     // Page de redirection pour une bonne connexion                
@@ -62,10 +69,10 @@ app.get('/login', (req, res) => {
 
 // La liste de toutes les demandes
 app.get('/demandes-listes', (req, res) => {
-    connexion.query('SELECT nom, prenoms, themesoutenance, nomfiliere FROM etudiant JOIN filiere ON etudiant.idfiliere = filiere.idfiliere', (error, results) => {
+    connexion.query('SELECT nom, prenoms, theme,nomfiliere, objspecifique, objgeneral, problematique, environdevelop, statut FROM etudiant JOIN filiere ON etudiant.idfiliere = filiere.idfiliere JOIN donnetheme ON donnetheme.idetudiant = etudiant.idetudiant', (error, results) => {
         if (error) {
             console.log('Erreur lors de la récupération des demandes', error);
-            return res.status(500).json({ error: 'Database query error' });
+        
         } else {
             return res.json({ resultats: results });
         }
@@ -74,32 +81,115 @@ app.get('/demandes-listes', (req, res) => {
 
 // Effectuer une demande 
 app.get('/demandes', (req, res) => {
+    // Données etudiant
     let nom = 'Gaoussou';
     let prenoms = 'fiero';
     let datenaiss = '2022-10-25';
     let username = 'Nfk';
     let password = '123456';
     let filiere = 'commerciale';
-    let themeSoutenance = 'Gestion d\'un magasin';
-
     let filieres = ['RGL', 'comptabilite', 'commerciale', 'ressource humaine', 'assistante de direction'];
+    // Données concernant le theme
+
+    let theme = 'Gestion de terrain'
+    let ObjSpecifique = 'Personnelle'
+    let ObjGeneral = 'Pour le bien etre'
+    let Prblm = 'gestion manuelle'
+    let Environnement = 'VSCode '
 
     if (filieres.includes(filiere)) {
-        const query1 = 'INSERT INTO etudiant (nom, prenoms, datenaiss, userame, password, themesoutenance, idfiliere) VALUES (?, ?, ?, ?, ?, ?, ?)';
-        const values1 = [nom, prenoms, datenaiss, username, password, themeSoutenance, (filieres.indexOf(filiere) + 1)];
-        
+        const query1 = 'INSERT INTO etudiant (nom, prenoms, datenaiss, userame, password, idfiliere) VALUES (?, ?, ?, ?, ?, ?)';
+        const values1 = [nom, prenoms, datenaiss, username, password, (filieres.indexOf(filiere) + 1)];
         connexion.query(query1, values1, (error, result) => {
             if (error) {
-                console.log('Erreur d\'ajout de la demande', error);
-                return res.status(500).json({ error: 'Database query error' });
+                console.log('Erreur d\'ajout de la demande', error);  
             } else {
-                return res.json({ resultat: result });
+                 const etudiantId = result.insertId
+                 const query = 'INSERT INTO donnetheme (theme, objspecifique, objgeneral, problematique, environdevelop, idetudiant) VALUES (?, ?, ?, ?, ?, ?)'
+                 const value = [theme, ObjSpecifique, ObjGeneral, Prblm, Environnement, etudiantId]
+                 connexion.query(query,value,(error, result)=>{
+                    if(error){
+                        res.json({Erreur:'Erreur de l\'ajout',error})
+                    }else{
+                        res.json({resultat:'Donnnées ajouté avec succes'})
+                    }
+                 })
             }
         });
     } else {
         return res.status(400).json({ error: 'Invalid filiere' });
     }
 });
+
+// Les updates du statut refusé
+app.get('/statut-no',(req, res)=>{
+    // Si bouton refusé est clické
+    let id = 35
+    let requet = `UPDATE donnetheme SET statut = 'Refuse' WHERE idetudiant = ?`
+    connexion.query(requet,[id], (err, result)=>{
+        if(err){
+            res.json({erreur:'Erreur de statut',err})
+        }else{
+            // Envoi de mail
+            res.json({resultat:'envoyé'})
+        }
+    } )
+
+})
+// Les updates du statut valider
+app.get('/statut-yes',(req, res)=>{
+    let id = 35
+   let requet = `UPDATE donnetheme SET statut = 'Valider' WHERE idetudiant = ?`
+    connexion.query(requet,[id], (err, result)=>{
+        if(err){
+            res.json({erreur:'Erreur de statut',err})
+        }else{
+            // Envoi de mail
+            res.json({resultat:result})
+        }
+    } )
+
+})
+
+app.post('/fichier', (req, res) => {
+    let filepath;
+    if (req.body && req.body.filepath) {
+        filepath = req.body.filepath;
+
+        if (!fs.existsSync(filepath)) {
+            return res.status(400).json({ error: 'Chemin non correct' });
+        }
+        const filename = path.basename(filepath);
+        const data = fs.readFileSync(filepath);
+        const bases = data.toString('base64')
+
+        const queri = 'INSERT INTO document (nomdoc, bulletin) VALUES (?, ?)'
+        connexion.query(queri,[filename, bases], (error, result)=>{
+            if(error) res.json({Erreur: 'Erreur d\'insertion de l\'image', error})
+            else res.json({resultat:'Fichier inseré avec succés'})
+        })
+    } else {
+        console.log('Chemin du fichier invalide');
+        return res.status(400).json({ error: 'Chemin pas retrouvé' });
+    }
+});
+app.get('/images',(req, res)=>{
+    const ress = 'SELECT * FROM document'
+    connexion.query(ress,(error, result)=>{
+        if(error) console.log(error);
+        if (result.length > 0) {
+            const file = result[0];
+            const imgBuffer = Buffer.from(file.bulletin, 'base64');
+            res.writeHead(200, {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `inline; filename="${file.nomdoc}"`
+            });
+            res.end(imgBuffer);
+        } else {
+            return res.status(404).json({ error: 'File not found' });
+        }
+    })
+})
 
 app.use('/etudiant', route);
 app.use('/encadreur', route2);
