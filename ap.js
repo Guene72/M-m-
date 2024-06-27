@@ -120,114 +120,98 @@ app.get('/demandes', (req, res) => {
 });
 
 // Les updates du statut refusé
-app.get('/statut-no',(req, res)=>{
-    // Si bouton refusé est clické /statut-no/:id
-    let id = 35
-    let requet = `UPDATE donnetheme SET statut = 'Refuse' WHERE idetudiant = ?`
-    connexion.query(requet,[id], (err, result)=>{
-        if(err){
-            res.json({erreur:'Erreur de statut',err})
-        }else{
-            connexion.query('SELECT email FROM etudiant  WHERE idetudiant = ?',[id],(errorr, result)=>{
-                if(errorr) {
-                  res.json({resultat:'Errur de recup du mail'})  
-                } 
-                else{
+app.get('/statut-no', (req, res) => {
+    const idEtudiant = parseInt(req.body.idetudiant);
+    const motif = req.body.motif;
+    let requet = `UPDATE donnetheme SET statut = 'Refuse', motif = ? WHERE idetudiant = ?`;
+    
+    connexion.query(requet, [motif, idEtudiant], (err, result) => {
+        if (err) {
+            return res.json({ erreur: 'Erreur de statut', err });
+        } else {
+            connexion.query('SELECT email, motif FROM etudiant JOIN donnetheme ON donnetheme.idetudiant = etudiant.idetudiant WHERE donnetheme.idetudiant = ?', [idEtudiant], (errorr, result) => {
+                if (errorr) {
+                    console.log(errorr);
+                    return res.json({ erreur: 'Erreur de récupération du mail', errorr });
+                } else {
                     let transporter = nodemailer.createTransport({
                         service: 'Outlook365',
                         host: 'smtp-mail.outlook.com',
                         port: 587,
                         secure: false,
                         auth: {
-                          user: 'moumouniguene@outlook.com',
-                          pass: 'Moumouni79'
+                            user: 'moumouniguene@outlook.com',
+                            pass: 'Moumouni79'
                         }
-                      });
-                      let message = `<!DOCTYPE html><html lang="en">
-                   <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Document</title>
-                   </head><style>body{display: flex;align-items: center;justify-content: center;}div{border-radius: 10px;width: 500px;display: flex;background-color: rgb(191, 213, 233);flex-direction: column;align-items: center;justify-content: center;}
-                   div p{color: black;font-weight: bold;}div .p1{color: black;font-size: 21px;text-decoration: underline;font-weight: bold;}div span{color: rgb(253, 0, 0);font-weight: bold;}
-                  .un{display: flex;flex-direction: column;align-items: center;justify-content: center}
-                    </style><body><div> <p class="p1">Demande de soutenance</p><div class="un"><p>Votre demande de soutenance est :</p><span>REFUSE</span> <p>Pour motif suivant: Dossier incomplets</p>
-                   </div></div></body></html>`
-                      
-                   let mailOptions = {
-                        from: 'SOUTENANCE PIGIER',
+                    });
+                    
+                    let message = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Document</title></head><style>body{display: flex;align-items: center;justify-content: center;}div{border-radius: 10px;width: 500px;display: flex;background-color: rgb(191, 213, 233);flex-direction: column;align-items: center;justify-content: center;}div p{color: black;font-weight: bold;}div .p1{color: black;font-size: 21px;text-decoration: underline;font-weight: bold;}div span{color: rgb(253, 0, 0);font-weight: bold;}.un{display: flex;flex-direction: column;align-items: center;justify-content: center}</style><body><div> <p class="p1">Demande de soutenance</p><div class="un"><p>Votre demande de soutenance est :</p><span>REFUSE</span> <p>Pour motif suivant: ${result[0].motif}</p></div></div></body></html>`;
+                    
+                    let mailOptions = {
+                        from: 'SOUTENANCE PIGIER <moumouniguene@outlook.com>',
                         to: result[0].email,
                         subject: 'REPONSE DE LA DEMANDE',
                         text: 'Refusé',
                         html: message
-                      };                     
-                      transporter.sendMail(mailOptions, (error, info) => {
+                    };
+                    
+                    transporter.sendMail(mailOptions, (error, info) => {
                         if (error) {
-                            res.json({message:'Email non envoyé',error})
-                         
+                            return res.json({ message: 'Email non envoyé', error });
                         }
-                         res.json({resultat:'Email de refus envoyé'})  
-                      });
-                    // res.json({resultat:'Reponse refuse envoyé'})
-            }
-             
-            })
-          
-            // Envoi de mail
-           
+                        return res.json({ resultat: 'Email de refus envoyé' });
+                    });
+                }
+            });
         }
-    } )
-
-})
+    });
+});
 // Les updates du statut valider
-app.get('/statut-yes',(req, res)=>{
-    let id = 35
-   let requet = `UPDATE donnetheme SET statut = 'Valider' WHERE idetudiant = ?`
-    connexion.query(requet,[id], (err, result)=>{
-        if(err){
-            res.json({erreur:'Erreur de statut',err})
-        }else{
-            connexion.query('SELECT email FROM etudiant  WHERE idetudiant = ?',[id],(errorr, result)=>{
-                if(errorr)  res.json({resultat:'Errur de recup du mail'})
+app.get('/statut-yes', (req, res) => {
+    let idEtudiant = req.body.idetudiant;
+    let requet = `UPDATE donnetheme SET statut = 'Valider' WHERE idetudiant = ?`;
+    
+    connexion.query(requet, [idEtudiant], (err, result) => {
+        if (err) {
+            return res.json({ erreur: 'Erreur de statut', err });
+        } else {
+            connexion.query('SELECT email FROM etudiant WHERE idetudiant = ?', [idEtudiant], (errorr, result) => {
+                if (errorr) {
+                    return res.json({ resultat: 'Erreur de récupération du mail' });
+                }
+                
                 let transporter = nodemailer.createTransport({
                     service: 'Outlook365',
                     host: 'smtp-mail.outlook.com',
                     port: 587,
                     secure: false,
                     auth: {
-                      user: 'moumouniguene@outlook.com',
-                      pass: 'Moumouni79'
+                        user: 'moumouniguene@outlook.com',
+                        pass: 'Moumouni79'
                     }
-                  });
-                  let message = `<!DOCTYPE html><html lang="en">
-               <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Document</title>
-               </head><style>body{display: flex;align-items: center;justify-content: center;}div{border-radius: 10px;width: 500px;display: flex;background-color: rgb(191, 213, 233);flex-direction: column;align-items: center;justify-content: center;}
-               div p{color: black;font-weight: bold;}div .p1{color: black;font-size: 21px;text-decoration: underline;font-weight: bold;}div span{color: rgb(253, 0, 0);font-weight: bold;}
-              .un{display: flex;flex-direction: column;align-items: center;justify-content: center}
-                </style><body><div> <p class="p1">Demande de soutenance</p><div class="un"><p>Votre demande de soutenance est :</p><span>ACCECPER</span> <p>Votre rendez est pourle : 18/08/2024</p>
-               </div></div></body></html>`
-                  
-               let mailOptions = {
+                });
+                
+                let message = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Document</title></head><style>body{display: flex;align-items: center;justify-content: center;}div{border-radius: 10px;width: 500px;display: flex;background-color: rgb(191, 213, 233);flex-direction: column;align-items: center;justify-content: center;}div p{color: black;font-weight: bold;}div .p1{color: black;font-size: 21px;text-decoration: underline;font-weight: bold;}div span{color: rgb(253, 0, 0);font-weight: bold;}.un{display: flex;flex-direction: column;align-items: center;justify-content: center}</style><body><div> <p class="p1">Demande de soutenance</p><div class="un"><p>Votre demande de soutenance est :</p><span>ACCEPTER</span> <p>Votre rendez-vous est pour le : 18/08/2024</p></div></div></body></html>`;
+                
+                let mailOptions = {
                     from: 'SOUTENANCE PIGIER <moumouniguene@outlook.com>',
                     to: result[0].email,
                     subject: 'REPONSE DE LA DEMANDE',
-                    text: 'Refusé',
+                    text: 'Accepté',
                     html: message
-                  };
-                  
-                  transporter.sendMail(mailOptions, (error, info) => {
+                };
+                
+                transporter.sendMail(mailOptions, (error, info) => {
                     if (error) {
-                        res.json({resultat:'Email non envoyé'})
-                      return;
+                        return res.json({ resultat: 'Email non envoyé' });
                     }
-                    console.log('Message Envoyé: %s', info.messageId);
-                    
-                  });
-            })
-            // Envoi de mail
-            res.json({resultat:'email envoyé'})
-           
+                    console.log('Message envoyé: %s', info.messageId);
+                    return res.json({ resultat: 'Email envoyé' });
+                });
+            });
         }
-    } )
-
-})
+    });
+});
 
 app.post('/fichier', (req, res) => {
     let filepath;
