@@ -60,7 +60,7 @@ class Element {
   
   // Recuperation de la liste de tout les etudiants
   static aff(req, res) {
-    connexion.query('SELECT * FROM etudiant JOIN filiere ON etudiant.idfiliere = filiere.idfiliere', (error, result) => {
+    connexion.query('SELECT * FROM etudiant /*JOIN filiere ON etudiant.idfiliere = filiere.idfiliere', (error, result) => {
       if (error) {
         console.log('Erreur sur la requête de recuperation');
         res.status(500).json({ error: 'Erreur sur la requête de recuperation' });
@@ -69,20 +69,43 @@ class Element {
       }
     });
   }
+  static etudiantById(req, res) {
+    // Récupérer l'ID de l'étudiant depuis les paramètres de la requête
+    const idEtudiant = parseInt(req.body.idetudiant);
 
-      //  Ajout d'etudiant
+    // Requête SQL pour récupérer un étudiant par son ID
+    connexion.query('SELECT * FROM etudiant WHERE idetudiant = ?', [idEtudiant], (error, result) => {
+      if (error) {
+        console.error('Erreur sur la requête de récupération de l\'étudiant :', error);
+        res.status(500).json({ error: 'Erreur sur la requête de récupération de l\'étudiant' });
+      } else {
+        // Vérifier si un étudiant avec cet ID a été trouvé
+        if (result.length === 0) {
+          res.status(404).json({ error: 'Étudiant non trouvé' });
+        } else {
+          const etudiant = result[0]; // Utilisation de result[0] car on s'attend à un seul résultat
+          res.json(etudiant);
+        }
+      }
+    });
+  }
+  // Route pour obtenir les informations de l'utilisateur
+
+
+
+
+
+
+
+  //  Ajout d'etudiant
       static add(req, res) {
-     
-        let nom = 'Momo';
-        let prenoms = 'Kablan';
-        let age = '2022-10-25';
-        let usernames = 'mmm';
-        let password = '33333';
-    
+
+        const {nom, prenoms,username,password,profile}=req.body
+
         // Parameterized query to prevent SQL injection
-        const query = 'INSERT INTO etudiant (nom, prenoms, datenaiss, username, password) VALUES (?, ?, ?, ?, ?)';
-        const values = [nom, prenoms, age, usernames, password];
-    
+        const query = 'INSERT INTO etudiant (nom, prenoms, username, password,profile) VALUES (?, ?, ?, ?, ?)';
+        const values = [nom, prenoms, username, password,profile];
+
         connexion.query(query, values, (error) => {
             if (error) {
                 console.error('Erreur sur la requête d\'insertion:', error);
@@ -223,6 +246,7 @@ class Element2 {
 
 // Les routes pour etudiants
 route.get('/liste', Element.aff);
+route.get('/liste/:id', Element.etudiantById);
 route.get('/ajout', Element.add);
 route.get('/edit', Element.update);
 route.get('/delete', Element.delete);
